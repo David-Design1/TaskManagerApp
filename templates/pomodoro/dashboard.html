@@ -1,0 +1,272 @@
+{% extends "includes/base.html" %}
+{% load static %}
+
+{% block title %}Pomodoro | MindHelper{% endblock %}
+
+
+{% block content %}
+<div class="flex flex-col min-h-screen bg-gray-50">
+  <!-- Timer Section -->
+  <div class="relative flex-none bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4">
+    <!-- Help Button -->
+    <div class="fixed right-4 top-1/2 transform -translate-y-1/2 z-20">
+      <button 
+        id="helpButton"
+        class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg hover:bg-white/30 active:scale-95 transition-all duration-200 backdrop-blur-sm"
+        aria-label="Instrucciones Pomodoro"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+    <!-- Task Quick Select -->
+    <div class="absolute top-4 right-4 z-10">
+      <button id="taskToggle" class="flex items-center space-x-2 bg-white/20 rounded-full px-3 py-1.5 text-sm font-medium backdrop-blur-sm">
+        <span class="task-name truncate max-w-[150px]">Select Task</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Timer Display -->
+    <div class="flex flex-col items-center justify-center pt-12 pb-6">
+      <div class="relative">
+        <svg class="w-48 h-48 transform -rotate-90">
+          <circle
+            cx="96"
+            cy="96"
+            r="88"
+            stroke="currentColor"
+            stroke-width="8"
+            fill="none"
+            class="text-white/20"
+          />
+          <circle
+            id="timerProgress"
+            cx="96"
+            cy="96"
+            r="88"
+            stroke="currentColor"
+            stroke-width="8"
+            fill="none"
+            stroke-dasharray="552.92"
+            stroke-dashoffset="0"
+            class="text-white transition-all duration-1000"
+          />
+        </svg>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+          <div id="timer" class="text-4xl font-bold">25:00</div>
+          <div id="sessionType" class="text-sm opacity-80">Pomodoro</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timer Controls -->
+    <div class="flex justify-center space-x-4 pb-4">
+      <button id="mainActionBtn" class="flex items-center justify-center w-14 h-14 rounded-full bg-white text-purple-600 shadow-lg active:scale-95 transition-transform">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+
+      {% if active_session %}
+        <button id="cancelSessionBtn" 
+                class="flex items-center justify-center w-14 h-14 rounded-full bg-white/20 text-white shadow-lg active:scale-95 transition-transform backdrop-blur-sm"
+                title="Cancelar sesión">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats Section -->
+  <div class="flex-1 px-4 py-6">
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-xl p-4 shadow-sm">
+        <div class="text-2xl font-bold text-purple-600">{{ stats.completed_pomodoros }}</div>
+        <div class="text-sm text-gray-600">Today's Focus</div>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow-sm">
+        <div class="text-2xl font-bold text-purple-600">{{ stats.total_focus_time }}m</div>
+        <div class="text-sm text-gray-600">Focus Time</div>
+      </div>
+    </div>
+
+    <!-- Today's Sessions -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="p-4 border-b">
+        <h3 class="font-semibold text-gray-900">Today's Sessions</h3>
+      </div>
+      <div class="divide-y">
+        {% for session in today_sessions %}
+          <div class="flex items-center justify-between p-4">
+            <div>
+              <div class="font-medium text-gray-900">{{ session.task.title }}</div>
+              <div class="text-sm text-gray-500">
+                {{ session.get_session_type_display }} • {{ session.started_at|time:"H:i" }}
+              </div>
+            </div>
+            <div class="text-sm font-medium {% if session.status == 'completed' %}text-green-600{% else %}text-gray-500{% endif %}">
+              {% if session.actual_duration %}
+                {{ session.actual_duration }}m
+              {% else %}
+                In Progress
+              {% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <div class="p-4 text-center text-gray-500">No sessions today</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Selection Modal -->
+  <div id="taskModal" class="fixed inset-0 bg-black/50 z-50 hidden">
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl max-h-[70vh] overflow-auto">
+      <div class="sticky top-0 bg-white border-b p-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900">Select Task</h3>
+          <button id="closeTaskModal" class="text-gray-400 hover:text-gray-500">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-4">
+        {% for task in pending_tasks %}
+          <button 
+            data-task-id="{{ task.id }}" 
+            class="task-option w-full text-left mb-2 p-3 rounded-lg bg-gray-50 hover:bg-gray-100"
+          >
+            <div class="font-medium text-gray-900">{{ task.title }}</div>
+            <div class="text-sm text-gray-500">
+              {{ task.completed_pomodoros }}/{{ task.estimated_pomodoros }} pomodoros
+            </div>
+          </button>
+        {% empty %}
+          <div class="text-center text-gray-500 py-4">No pending tasks</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <!-- Help Modal -->
+<div id="helpModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50 transition-opacity duration-300" id="helpModalBackdrop"></div>
+  <div class="absolute inset-x-0 bottom-0 h-[60vh] transform translate-y-full transition-transform duration-300 ease-out bg-white shadow-xl rounded-t-2xl" id="helpModalContent">
+    <!-- Handle for drag indicator -->
+    <div class="w-full flex justify-center py-2">
+      <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+    </div>
+    
+    <!-- Modal Header -->
+    <div class="px-4 pb-2">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 text-lg">Instrucciones Pomodoro</h3>
+        <button id="closeHelpModal" class="p-2 text-gray-400 hover:text-gray-500 active:scale-95 transition-transform">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Modal Content -->
+    <div class="overflow-y-auto px-4 pb-6 space-y-6" style="max-height: calc(60vh - 4rem)">
+      <div class="space-y-4">
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <h4 class="font-medium text-purple-900 mb-2">¿Qué es la Técnica Pomodoro?</h4>
+          <p class="text-purple-700">La técnica Pomodoro es un método de gestión del tiempo que usa intervalos de 25 minutos de trabajo enfocado, seguidos por descansos cortos.</p>
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <h4 class="font-medium text-blue-900 mb-2">Cómo Usar la App</h4>
+          <div class="space-y-2 text-blue-700">
+            <p>1. Selecciona una tarea haciendo clic en el botón superior derecho.</p>
+            <p>2. Inicia el temporizador con el botón de play.</p>
+            <p>3. Trabaja enfocado durante los 25 minutos.</p>
+            <p>4. Cuando suene la alarma, toma un descanso de 5 minutos.</p>
+            <p>5. Después de 4 pomodoros, toma un descanso largo de 15 minutos.</p>
+          </div>
+        </div>
+
+        <div class="bg-green-50 p-4 rounded-lg">
+          <h4 class="font-medium text-green-900 mb-2">Controles</h4>
+          <div class="space-y-2 text-green-700">
+            <p>• Play/Pause: Inicia o pausa la sesión actual</p>
+            <p>• X: Cancela la sesión actual</p>
+            <p>• Selector de tareas: Cambia la tarea actual</p>
+          </div>
+        </div>
+
+        <div class="bg-orange-50 p-4 rounded-lg">
+          <h4 class="font-medium text-orange-900 mb-2">Consejos</h4>
+          <div class="space-y-2 text-orange-700">
+            <p>• Evita interrupciones durante el pomodoro</p>
+            <p>• Usa los descansos para estirar y relajarte</p>
+            <p>• Mantén un registro de tus pomodoros completados</p>
+            <p>• Ajusta la duración en configuración si es necesario</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+<script>
+  window.activeSession = {% if active_session %}{{ active_session_json|safe }}{% else %}null{% endif %};
+</script>
+<script src="{% static 'js/pomodoro.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const helpButton = document.getElementById('helpButton');
+    const helpModal = document.getElementById('helpModal');
+    const helpModalContent = document.getElementById('helpModalContent');
+    const helpModalBackdrop = document.getElementById('helpModalBackdrop');
+    const closeHelpModal = document.getElementById('closeHelpModal');
+  
+    function openModal() {
+      helpModal.classList.remove('hidden');
+      // Force a reflow to ensure the transition works
+      helpModal.offsetHeight;
+      helpModalContent.classList.remove('translate-y-full');
+      helpModalBackdrop.classList.add('opacity-100');
+      helpModalBackdrop.classList.remove('opacity-0');
+    }
+  
+    function closeModal() {
+      helpModalContent.classList.add('translate-y-full');
+      helpModalBackdrop.classList.remove('opacity-100');
+      helpModalBackdrop.classList.add('opacity-0');
+      // Wait for the transition to finish before hiding the modal
+      setTimeout(() => {
+        helpModal.classList.add('hidden');
+      }, 300);
+    }
+  
+    helpButton.addEventListener('click', openModal);
+    closeHelpModal.addEventListener('click', closeModal);
+  
+    // Close modal when clicking outside
+    helpModalBackdrop.addEventListener('click', closeModal);
+  
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !helpModal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+  });
+</script>
+{% endblock %}

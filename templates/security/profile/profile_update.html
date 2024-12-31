@@ -1,0 +1,351 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block title %}Actualizar Perfil - MindHelper{% endblock %}
+{% block extra_css %}
+<!-- Agregar estos estilos en el head del documento o en un archivo CSS -->
+<style>
+    .notification-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 50;
+    }
+
+    .notification {
+        opacity: 0;
+        transform: translateX(100%);
+        animation: slideIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .close-notification {
+        padding: 0.5rem;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .close-notification:hover {
+        opacity: 1;
+    }
+
+    /* Estilos para la previsualización de la foto */
+    .profile-photo-preview-container {
+        position: relative;
+    }
+
+    .profile-photo-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .profile-photo-preview-container:hover .profile-photo-overlay {
+        opacity: 1;
+    }
+</style>
+{% endblock extra_css %}
+{% block content %}
+<div class="max-w-2xl mx-auto p-4">
+    <form method="POST" class="space-y-8" id="profile-form">
+        {% csrf_token %}
+        
+        <!-- Información Básica -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-user-circle mr-2 text-primary"></i>
+                Información Básica
+            </h2>
+            <div class="space-y-6">
+                <!-- Foto de perfil -->
+                <div class="flex flex-col items-center space-y-4">
+                    <div class="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200">
+                        <img id="profile-photo-preview" 
+                             src="{{ user.get_profile_photo }}" 
+                             alt="Foto de perfil"
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="profile-photo-input" 
+                               class="cursor-pointer px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
+                            <i class="fas fa-camera mr-2"></i>Cambiar foto
+                        </label>
+                        <input type="file" 
+                               id="profile-photo-input" 
+                               name="profile_photo" 
+                               accept="image/*"
+                               class="hidden"
+                               onchange="previewImage(this)">
+                    </div>
+                </div>
+        
+                <!-- Campos de nombre y apellido -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                        <input type="text" 
+                               name="first_name" 
+                               value="{{ user.first_name }}" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Apellido</label>
+                        <input type="text" 
+                               name="last_name" 
+                               value="{{ user.last_name }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+        
+                <!-- Email oculto -->
+                <input type="hidden" name="email" value="{{ user.email }}">
+            </div>
+        </div>
+
+        <!-- Preferencias de Notificación -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-bell mr-2 text-primary"></i>
+                Preferencias de Notificación
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Hora de Notificación</label>
+                    <input type="time" name="preferred_notification_time" 
+                           value="{{ user.preferred_notification_time|time:'H:i' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Frecuencia de Notificaciones</label>
+                    <select name="notification_frequency" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="high" {% if user.notification_frequency == 'high' %}selected{% endif %}>
+                            Alta - Múltiples recordatorios diarios
+                        </option>
+                        <option value="medium" {% if user.notification_frequency == 'medium' %}selected{% endif %}>
+                            Media - Recordatorios diarios
+                        </option>
+                        <option value="low" {% if user.notification_frequency == 'low' %}selected{% endif %}>
+                            Baja - Recordatorios semanales
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración Pomodoro -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-clock mr-2 text-primary"></i>
+                Configuración Pomodoro
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Duración del Trabajo (min)</label>
+                    <input type="number" name="pomodoro_work_duration" 
+                           value="{{ user.pomodoro_work_duration }}" min="15" max="45"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Duración del Descanso (min)</label>
+                    <input type="number" name="pomodoro_break_duration" 
+                           value="{{ user.pomodoro_break_duration }}" min="3" max="15"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Accesibilidad -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-universal-access mr-2 text-primary"></i>
+                Accesibilidad
+            </h2>
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="use_high_contrast" 
+                           {% if user.use_high_contrast %}checked{% endif %}
+                           class="rounded border-gray-300 text-primary shadow-sm">
+                    <label class="ml-2 text-sm text-gray-700">Modo de Alto Contraste</label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tamaño del Texto</label>
+                    <select name="text_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="small" {% if user.text_size == 'small' %}selected{% endif %}>Pequeño</option>
+                        <option value="medium" {% if user.text_size == 'medium' %}selected{% endif %}>Mediano</option>
+                        <option value="large" {% if user.text_size == 'large' %}selected{% endif %}>Grande</option>
+                        <option value="extra_large" {% if user.text_size == 'extra_large' %}selected{% endif %}>Extra Grande</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="enable_text_to_speech" 
+                           {% if user.enable_text_to_speech %}checked{% endif %}
+                           class="rounded border-gray-300 text-primary shadow-sm">
+                    <label class="ml-2 text-sm text-gray-700">Activar Lectura en Voz Alta</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacto de Emergencia -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-phone-alt mr-2 text-primary"></i>
+                Contacto de Emergencia
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nombre del Contacto</label>
+                    <input type="text" name="emergency_contact_name" 
+                           value="{{ user.emergency_contact_name }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Teléfono</label>
+                    <input type="tel" name="emergency_contact_phone" 
+                           value="{{ user.emergency_contact_phone }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" name="emergency_contact_email" 
+                           value="{{ user.emergency_contact_email }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'security:profile' %}" 
+               class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Cancelar
+            </a>
+            <button type="submit" 
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:bg-gradient-to-l text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 flex items-center gap-2">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_javascript %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('profile-form');
+        
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('{% url "security:ajax-update" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    },
+                    body: formData  // Enviamos FormData directamente
+                });
+        
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    if (data.profile_photo_url) {
+                        document.getElementById('profile-photo-preview').src = data.profile_photo_url;
+                    }
+                    
+                    showNotification('success', 'Perfil actualizado exitosamente');
+                    
+                    setTimeout(() => {
+                        window.location.href = '{% url "security:profile" %}';
+                    }, 1500);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('error', `Error al actualizar el perfil: ${error.message}`);
+            }
+        });
+    });
+    
+    // Función para manejar la previsualización de imagen
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                document.getElementById('profile-photo-preview').src = e.target.result;
+            };
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    // Función para mostrar notificaciones
+    function showNotification(type, message) {
+        // Asegurarse de que existe el contenedor de notificaciones
+        let notificationContainer = document.querySelector('.notification-container');
+        if (!notificationContainer) {
+            notificationContainer = document.createElement('div');
+            notificationContainer.className = 'notification-container fixed top-4 right-4 z-50';
+            document.body.appendChild(notificationContainer);
+        }
+    
+        const notification = document.createElement('div');
+        notification.className = `notification ${type} p-4 mb-4 rounded-lg shadow-lg transform transition-all duration-300 max-w-md`;
+        
+        // Estilos según el tipo
+        if (type === 'error') {
+            notification.className += ' bg-red-100 border-l-4 border-red-500 text-red-700';
+        } else if (type === 'success') {
+            notification.className += ' bg-green-100 border-l-4 border-green-500 text-green-700';
+        }
+    
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <div class="notification-icon mr-3">
+                    ${type === 'error' ? 
+                        '<i class="fas fa-exclamation-circle"></i>' : 
+                        '<i class="fas fa-check-circle"></i>'}
+                </div>
+                <div class="notification-content">
+                    <span class="font-medium">${message}</span>
+                </div>
+                <button class="ml-auto close-notification">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    
+        // Agregar la notificación al contenedor
+        notificationContainer.appendChild(notification);
+    
+        // Agregar evento para cerrar la notificación
+        notification.querySelector('.close-notification').addEventListener('click', () => {
+            notification.remove();
+        });
+    
+        // Auto-eliminar después de 5 segundos
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}
