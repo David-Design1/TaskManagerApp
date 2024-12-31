@@ -24,12 +24,6 @@
             </button>
         </div>
 
-        <div class="social-login">
-            <a href="{% url 'google_login' %}" class="google-login-btn">
-                <img src="{% static 'img/google_icon.png' %}" alt="Google icon" class="google-icon">
-                <span>Continuar con Google</span>
-            </a>
-        </div>
 
         <div class="separator">
             <span>o</span>
@@ -137,5 +131,4 @@
 
 {% block extra_javascript %}
 <script src="{% static 'js/auth.js' %}"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 {% endblock %}
