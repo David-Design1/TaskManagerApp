@@ -45,13 +45,6 @@ class User(AbstractUser):
         verbose_name='apellidos',
         help_text="Apellidos completos del usuario"
     )
-    profile_photo = models.ImageField(
-        upload_to='users/profile_photos/%Y/%m/',
-        null=True,
-        blank=True,
-        verbose_name='foto de perfil',
-        help_text="Foto de perfil del usuario"
-    )
     
     # Resolviendo conflictos de accesores inversos
     groups = models.ManyToManyField(
@@ -161,31 +154,12 @@ class User(AbstractUser):
         """Retorna el nombre completo del usuario"""
         return f"{self.first_name} {self.last_name}".strip()
 
-    def get_profile_photo(self):
-        """
-        Retorna la URL de la foto de perfil del usuario.
-        Si no tiene foto, retorna una URL por defecto.
-        
-        Returns:
-            str: URL de la foto de perfil o imagen por defecto
-        """
-        if self.profile_photo and hasattr(self.profile_photo, 'url'):
-            return self.profile_photo.url
-        
-        # Verificar si existe una URL por defecto en settings
-        default_photo_url = getattr(settings, 'DEFAULT_PROFILE_PHOTO_URL', None)
-        if default_photo_url:
-            return default_photo_url
-            
-        # Si no hay URL por defecto en settings, usar una URL estática
-        return '/static/img/default-profile-photo.png'
     
     def get_profile_info(self):
         """Retorna la información básica del perfil del usuario"""
         return {
             'full_name': self.get_full_name(),
             'email': self.email,
-            'profile_photo_url': self.profile_photo.url if self.profile_photo else None,
             'username': self.username
         }
     
