@@ -127,14 +127,7 @@ WSGI_APPLICATION = 'task_manager.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "sdr-web-task",
-        "USER": "postgres",
-        "PASSWORD": "0994855909",
-        "HOST": "sdr-web-task.crgqgwueudk1.us-east-2.rds.amazonaws.com",
-        "PORT": "5432",
-    }
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 # Cache settings (using Railway Redis if available)
