@@ -23,7 +23,7 @@ app.conf.beat_schedule = {
     },
     'upcoming-task-reminders': {
         'task': 'apps.tasks.notifications.send_upcoming_task_reminders',
-        'schedule': crontab(minute=0, hour='*/4'),  # Cada 4 horas
+        'schedule': crontab(minute=0, hour='*/8'),  # Cada 4 horas
     },
     'weekly-task-summary': {
         'task': 'apps.tasks.notifications.send_weekly_task_summary',
