@@ -114,7 +114,7 @@ TEMPLATES = [
 ]
 
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_SECURE = True  # Cambia a True en producción
+SESSION_COOKIE_SECURE = False  # Cambia a True en producción
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
