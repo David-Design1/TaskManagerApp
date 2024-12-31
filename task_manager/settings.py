@@ -120,14 +120,6 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 BROWSER_REFRESH_SECONDS = 1
 
-CELERYD_CONCURRENCY = 4  # Número de workers
-CELERYD_POOL = 'solo'  # Pool predeterminado
-CELERY_TASK_TIME_LIMIT = 300  # Limitar a 5 minutos por tarea
-CELERY_TASK_SOFT_TIME_LIMIT = 240  # Advertencia a los 4 minutos
-CELERY_TASK_ACKS_LATE = True  # Asegura que las tareas solo se marquen como completadas después de ser procesadas
-CELERY_RESULT_BACKEND = None
-
-
 
 WSGI_APPLICATION = 'task_manager.wsgi.application'
 
