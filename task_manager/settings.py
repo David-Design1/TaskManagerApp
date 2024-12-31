@@ -26,15 +26,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key-for-dev')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['web-production-13ed.up.railway.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['web-production-c98f.up.railway.app', 'localhost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://web-production-13ed.up.railway.app/'
+    'https://web-production-c98f.up.railway.app/'
 ]
 
 # Update CORS settings to use only HTTPS in production
 CORS_ALLOWED_ORIGINS = [
-    'https://web-production-13ed.up.railway.app/',
+    'https://web-production-c98f.up.railway.app/',
     'http://localhost:3000',  # Keep for local development
     'http://localhost:8000',  # Keep for local development
 ]
